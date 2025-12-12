@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Divine Clinic — Book Appointment</title>
+<link rel="stylesheet" href="shared.css">
+<script src="api.js"></script>
+</head>
+<body>
+<div class="header">Divine Clinic — Appointment Booking</div>
+<div class="container">
+  <h2>Book an Appointment</h2>
+  <label>Full Name</label>
+  <input id="name" placeholder="Your full name">
+  <label>Phone Number</label>
+  <input id="phone" placeholder="10-digit phone number">
+  <label>Select Branch</label>
+  <select id="branchSelect"></select>
+  <button id="bookBtn">Book Token</button>
+  <div id="result" class="card" style="display:none;">
+    <h3>Appointment Booked</h3>
+    <p>Your Token: <b id="tokenNum"></b></p>
+    <p>Estimated Wait: <b id="eta"></b> minutes</p>
+    <p>QR for Check-in:</p>
+    <img id="qrImg" width="160" alt="QR">
+    <p class="small">Saved patient id in local storage for quick history lookup.</p>
+  </div>
+  <div class="footer">
+    <a class="link" href="checkin.html">Check-in</a> |
+    <a class="link" href="patient_history.html">My History</a> |
+    <a class="link" href="doctor.html">Doctor Panel</a> |
+    <a class="link" href="admin.html">Admin</a>
+  </div>
+</div>
+<script>
+(async function(){
+  try {
+    const branches = await api('/api/branches');
+    const sel = document.getElementById('branchSelect');
+    branches.forEach(b => {
+      const o = document.createElement('option'); o.value = b.id; o.textContent = b.name; sel.appendChild(o);
+    });
+  } catch (e) {
+    alert('Failed to load branches. Start backend first.');
+  }
+  document.getElementById('bookBtn').addEventListener('click', async () => {
+    const name = document.getElementById('name').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const branch_id = document.getElementById('branchSelect').value;
+    if(!phone) return alert('Phone required');
+    try {
+      const patient = await api('/api/patients/findOrCreate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, phone }) });
+      const res = await api('/api/tokens/book', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ branch_id, patient_id: patient.id }) });
+      document.getElementById('tokenNum').innerText = res.token_number;
+      document.getElementById('eta').innerText = res.eta_minutes || '—';
+      document.getElementById('qrImg').src = API_BASE + '/api/tokens/qr/checkin/' + res.token_id;
+      document.getElementById('result').style.display = 'block';
+      localStorage.setItem('last_patient_id', patient.id);
+      localStorage.setItem('last_token_id', res.token_id);
+    } catch (err) {
+      alert('Booking failed: ' + err.message);
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Check-in — Divine Clinic</title>
+<link rel="stylesheet" href="shared.css">
+<script src="api.js"></script>
+</head>
+<body>
+<div class="header">Divine Clinic — Check-in</div>
+<div class="container">
+  <h2>Check-in (paste token id or scan QR)</h2>
+  <label>Token ID</label>
+  <input id="token" placeholder="Paste token id">
+  <button id="checkinBtn">Check In</button>
+  <p id="status" class="small"></p>
+  <div class="note small">If you scanned QR with phone it should pass ?token= in URL.</div>
+</div>
+<script>
+(async function(){
+  const urlParams = new URLSearchParams(window.location.search);
+  const t = urlParams.get('token');
+  if(t) document.getElementById('token').value = t;
+  document.getElementById('checkinBtn').addEventListener('click', async ()=>{
+    const token = document.getElementById('token').value.trim();
+    if(!token) return alert('Enter token id');
+    try {
+      await api('/api/tokens/' + token + '/checkin', { method:'POST' });
+      document.getElementById('status').innerText = 'Checked in successfully';
+    } catch (e) {
+      document.getElementById('status').innerText = 'Check-in failed: ' + e.message;
+    }
+  });
+})();
+</script>
+</body>
+</html>

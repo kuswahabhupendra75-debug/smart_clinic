@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Doctor Panel — Divine Clinic</title>
+<link rel="stylesheet" href="shared.css">
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+<script src="api.js"></script>
+</head>
+<body>
+<div class="header">Doctor Panel — Divine Clinic</div>
+<div class="container">
+  <h2>Live Queue</h2>
+  <label>Select Branch</label>
+  <select id="branchSelect"></select>
+  <div style="margin-top:10px;">
+    <button id="joinBtn">Join Branch</button>
+    <button id="refreshBtn">Refresh Queue</button>
+  </div>
+  <div id="queue" class="card"></div>
+  <div style="margin-top:12px;">
+    <label>Token ID to serve</label>
+    <input id="serveId"><button id="serveBtn">Mark Served</button>
+  </div>
+</div>
+<script>
+const socket = io('http://localhost:4000');
+async function loadBranches(){ const b = await api('/api/branches'); const sel=document.getElementById('branchSelect'); b.forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=x.name;sel.appendChild(o);}); }
+async function refreshQueue(){ try{ const branchId=document.getElementById('branchSelect').value; if(!branchId) return alert('Select branch'); const q = await api('/api/tokens/branch/' + branchId + '/list'); const box=document.getElementById('queue'); box.innerHTML='<h3>Queue</h3>'; if(!q.tokens.length) box.innerHTML+='<p class="small'>No tokens</p>'; q.tokens.forEach(t=>{ const el=document.createElement('div'); el.className='token_item'; el.innerHTML=`<div>Token #${t.token_number}<div class="small">${t.status}</div></div><div class="token_badge">${t.id.slice(0,8)}</div>`; box.appendChild(el); }); }catch(e){alert('Failed: '+e.message);} }
+document.getElementById('joinBtn').addEventListener('click', ()=>{ const branch=document.getElementById('branchSelect').value; if(!branch) return alert('Select branch'); socket.emit('join_branch', branch); alert('Joined branch');});
+document.getElementById('refreshBtn').addEventListener('click', refreshQueue);
+document.getElementById('serveBtn').addEventListener('click', async ()=>{ const id=document.getElementById('serveId').value.trim(); if(!id) return alert('Enter token id'); await api('/api/tokens/served',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token_id:id})}); alert('Marked served'); refreshQueue(); });
+socket.on('queue_update', refreshQueue); socket.on('token_called', refreshQueue); socket.on('token_served', refreshQueue);
+loadBranches();
+</script>
+</body>
+</html>
