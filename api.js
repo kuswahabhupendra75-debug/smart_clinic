@@ -1,5 +1,4 @@
 const API_BASE = "https://smart-clinic-bibf.onrender.com"
-const API_BASE = window.location.origin;
 
 
 async function api(path, opts = {}) {
