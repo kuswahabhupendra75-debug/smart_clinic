@@ -1,5 +1,4 @@
-const API_BASE = "https://smart-clinic-backend.onrender.com";
-
+const API_BASE = "https://smart-clinic-bibf.onrender.com"
 
 async function api(path, opts = {}) {
   const url = API_BASE + path;
